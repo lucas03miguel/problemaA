@@ -2,67 +2,42 @@ from collections import deque
 from copy import deepcopy
 
 def rodar_esquerda(grid):
-    new_grid = [[0, 0], [0, 0]]
-    for i in range(len(grid)):
-        for j in range(len(grid[i])):
-            new_grid[len(grid[i])-1-j][i] = grid[i][j]
-    return new_grid
+    return [[grid[1][0], grid[0][0]], [grid[1][1], grid[0][1]]]
 
 def rodar_direita(grid):
-    new_grid = [[0, 0], [0, 0]]
-    for i in range(len(grid)):
-        for j in range(len(grid[i])):
-            new_grid[j][len(grid)-1-i] = grid[i][j]
-    return new_grid
+    return [[grid[0][1], grid[1][1]], [grid[0][0], grid[1][0]]]
+
 
 def rodar(grid, row, col, lado):
-    grid_copia = deepcopy(grid)
-    new_grid = [grid_copia[row][col:col + 2], grid_copia[row + 1][col:col + 2]]
-    #print(new_grid)
-
-    if lado == "esquerda":
-        new_grid = rodar_esquerda(new_grid)
-    else:
-        new_grid = rodar_direita(new_grid)
-    #print(new_grid)
-
-    grid_copia[row][col:col + 2] = new_grid[0]
-    grid_copia[row + 1][col:col + 2] = new_grid[1]
-
-    # Retorna a cópia atualizada
-    return grid_copia
-
-
+    new_grid = [grid[row][col:col + 2], grid[row + 1][col:col + 2]]
+    new_grid = rodar_esquerda(new_grid) if lado == "esquerda" else rodar_direita(new_grid)
+    return grid[:row] + [grid[row][:col] + new_grid[0] + grid[row][col+2:]] + \
+           [grid[row+1][:col] + new_grid[1] + grid[row+1][col+2:]] + grid[row+2:]
 
 def aztec(grid, moves):
-    objetivo = [(len(grid[0])) * [(i + 1)] for i in range(len(grid))]
-    
-    fronteira = deque()
-    fronteira.append((grid, 0))
-    visitados = []
-    visitados.append(grid)
+    objetivo = [[(i + 1) for _ in range(len(grid[0]))] for i in range(len(grid))]
+    fronteira = deque([(grid, 0)])
+    visitados = set()
+    visitados.add(tuple(map(tuple, grid)))
 
     while fronteira:
         estadoAtual, movimentos = fronteira.popleft()
-        
         if estadoAtual == objetivo:
             return movimentos
-        
         if movimentos >= moves:
-            continue 
-        
+            continue
+
         for i in range(len(grid) - 1):
-            for j in range(len(grid[i]) - 1):
+            for j in range(len(grid[0]) - 1):
                 for rotacao in ["esquerda", "direita"]:
                     novoEstado = rodar(estadoAtual, i, j, rotacao)
-
-                    if novoEstado == objetivo:
-                        return movimentos + 1
-                    
-                    if novoEstado not in visitados:
-                        visitados.append(novoEstado)
+                    estadoTupla = tuple(map(tuple, novoEstado))
+                    if estadoTupla not in visitados:
+                        visitados.add(estadoTupla)
                         fronteira.append((novoEstado, movimentos + 1))
-
+                        if novoEstado == objetivo:
+                            return movimentos + 1
+                        
     return "the treasure is lost!"
 
 
