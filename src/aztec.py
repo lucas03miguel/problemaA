@@ -1,12 +1,10 @@
 from collections import deque
-from copy import deepcopy
 
 def rodar_esquerda(grid):
     return [[grid[1][0], grid[0][0]], [grid[1][1], grid[0][1]]]
 
 def rodar_direita(grid):
     return [[grid[0][1], grid[1][1]], [grid[0][0], grid[1][0]]]
-
 
 def rodar(grid, row, col, lado):
     new_grid = [grid[row][col:col + 2], grid[row + 1][col:col + 2]]
@@ -19,69 +17,31 @@ def rodar(grid, row, col, lado):
     return grid[:row] + [grid[row][:col] + new_grid[0] + grid[row][col+2:]] + \
            [grid[row+1][:col] + new_grid[1] + grid[row+1][col+2:]] + grid[row+2:]
 
-
-def aztec(grid, moves):
-    objetivo = [[(i + 1) for _ in range(len(grid[0]))] for i in range(len(grid))]
-    fronteira = deque([(grid, 0)])
+def bfs(grid, objetivo, moves):
     visitados = set()
+    fila = deque([(grid, 0)])  # Cada elemento é uma tupla (configuração do grid, número de movimentos)
     visitados.add(tuple(map(tuple, grid)))
-
-    while fronteira:
-        estadoAtual, movimentos = fronteira.popleft()
+    
+    while fila:
+        estadoAtual, movimentos = fila.popleft()
         if estadoAtual == objetivo:
             return movimentos
-        if movimentos >= moves:
-            continue
-
-        for i in range(len(grid) - 1):
-            for j in range(len(grid[0]) - 1):
-                for rotacao in ["esquerda", "direita"]:
-                    novoEstado = rodar(estadoAtual, i, j, rotacao)
-                    estadoTupla = tuple(map(tuple, novoEstado))
-
-                    if novoEstado == objetivo:
-                        return movimentos + 1
-                    
-                    if estadoTupla not in visitados:
-                        visitados.add(estadoTupla)
-                        fronteira.append((novoEstado, movimentos + 1))
-                        
+        if movimentos < moves:
+            for i in range(len(grid) - 1):
+                for j in range(len(grid[0]) - 1):
+                    for lado in ["esquerda", "direita"]:
+                        novoEstado = rodar(estadoAtual, i, j, lado)
+                        estadoTupla = tuple(map(tuple, novoEstado))
+                        if estadoTupla not in visitados:
+                            visitados.add(estadoTupla)
+                            fila.append((novoEstado, movimentos + 1))
+    
     return "the treasure is lost!"
 
-"""
 def aztec(grid, moves):
-    objetivo = [[(i + 1) for _ in range(len(grid[0]))] for i in range(len(grid))]
-    fronteira = deque([(grid, 0, None)])
-    visitados = set()
-    visitados.add((tuple(map(tuple, grid)), None))
-
-    while fronteira:
-        estadoAtual, movimentos, ultimaAcao = fronteira.popleft()
-
-        if estadoAtual == objetivo:
-            return movimentos
-        
-        if movimentos >= moves:
-            continue
-
-        for i in range(len(grid) - 1):
-            for j in range(len(grid[0]) - 1):
-                for rotacao in ["esquerda", "direita"]:
-                    if ultimaAcao and rotacao != ultimaAcao:
-                        continue
-
-                    novoEstado = rodar(estadoAtual, i, j, rotacao)
-                    estadoTupla = (tuple(map(tuple, novoEstado)), rotacao)
-
-                    if novoEstado == objetivo:
-                        return movimentos + 1
-
-                    if estadoTupla not in visitados:
-                        visitados.add(estadoTupla)
-                        fronteira.append((novoEstado, movimentos + 1, rotacao))
-                        
-    return "the treasure is lost!"
-"""
+    objetivo = [[i + 1 for _ in range(len(grid[0]))] for i in range(len(grid))]
+    resultado = bfs(grid, objetivo, moves)
+    return resultado
 
 
 def main():
@@ -96,7 +56,6 @@ def main():
         
         min = aztec(G, moves)	
         print(min)
-
 
 if __name__ == "__main__":
     main()
