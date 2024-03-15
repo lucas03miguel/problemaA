@@ -1,12 +1,15 @@
-def rotate(grid, row, col, direction):
-    new_grid = [list(r) for r in grid]  # Deep copy
-    if direction == "left":
-        new_grid[row][col], new_grid[row][col+1], new_grid[row+1][col+1], new_grid[row+1][col] = \
-            grid[row][col+1], grid[row+1][col+1], grid[row+1][col], grid[row][col]
-    else:  # Right rotation
-        new_grid[row][col], new_grid[row][col+1], new_grid[row+1][col+1], new_grid[row+1][col] = \
-            grid[row+1][col], grid[row][col], grid[row][col+1], grid[row+1][col+1]
+def rodar(grid, row, col, lado):
+    new_grid = [r[:] for r in grid]
+
+    if lado == "esquerda":
+        new_grid[row][col], new_grid[row][col + 1], new_grid[row + 1][col], new_grid[row + 1][col + 1] = \
+        grid[row + 1][col], grid[row][col], grid[row + 1][col + 1], grid[row][col + 1]
+    else:
+        new_grid[row][col], new_grid[row][col + 1], new_grid[row + 1][col], new_grid[row + 1][col + 1] = \
+        grid[row][col + 1], grid[row + 1][col + 1], grid[row][col], grid[row + 1][col]
+
     return new_grid
+
 
 def is_goal_state(grid):
     for i, row in enumerate(grid):
@@ -18,26 +21,27 @@ def dfs(grid, moves_left, current_depth=0, visited=None):
     if visited is None:
         visited = set()
 
-    grid_tuple = tuple(map(tuple, grid))  # Represent the grid as a tuple for hashing
-    if grid_tuple in visited:  # Avoid revisiting states
+    grid_tuple = tuple(map(tuple, grid)) 
+    if grid_tuple in visited:
         return None
+    
     visited.add(grid_tuple)
 
     if is_goal_state(grid):
-        return current_depth  # Return the depth at which the goal state is found
-
+        return current_depth 
+    
     if moves_left == 0:
-        return None  # No moves left to explore
+        return None 
 
     for row in range(len(grid) - 1):
         for col in range(len(grid[0]) - 1):
             for direction in ["left", "right"]:
-                new_grid = rotate(grid, row, col, direction)
+                new_grid = rodar(grid, row, col, direction)
                 result = dfs(new_grid, moves_left - 1, current_depth + 1, visited)
                 if result is not None:
-                    return result  # If a solution is found, propagate it upwards
+                    return result
 
-    return None  # No solution found from this path
+    return None
 
 def solve_aztec_vault(grid, moves):
     result = dfs(grid, moves)
