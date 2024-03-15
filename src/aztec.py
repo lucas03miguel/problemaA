@@ -25,7 +25,7 @@ def is_goal_state(grid):
             return False
     return True
 
-def bfs_solve_optimized(grid, max_moves):
+def bfs_solve(grid, max_moves):
     queue = deque([(grid, 0)])
     visited = set([tuple(map(tuple, grid))])
     
