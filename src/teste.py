@@ -2,44 +2,27 @@ from collections import deque
 
 def manhattan_distance(grid):
     total_distance = 0
-    max_distance = 0
     for row in range(len(grid)):
         for col in range(len(grid[0])):
-            current_value_row = (grid[row][col] - 1)
-            total_distance = abs(current_value_row - row)
-            if total_distance > max_distance:
-                max_distance = total_distance
-
-    return max_distance
-
-def esta_praticamente_ordenada(matriz):
-    contagem = []
-    for i in range(len(matriz)):
-        contagem_fora_de_ordem = 0
-        for j in range(len(matriz[0])):
-            if matriz[i][j] != i + 1:
-                contagem_fora_de_ordem += 1
-        contagem.append(contagem_fora_de_ordem)
-
-    media = sum(contagem) / len(contagem)
-    if media > len(matriz[0]) / 2:
-        return False
-    return True
-
-def is_large_grid(R, C, G):
-    return (((R == 4 or R == 5) and (C == 4 or C == 5))) and not esta_praticamente_ordenada(G)
+            target_value = row + 1  # O valor que deveria estar nesta linha
+            current_value_row = (grid[row][col] - 1)  # A linha onde o valor atual deveria estar
+            total_distance += abs(current_value_row - row)
+    return total_distance
 
 def rotate_grid(grid, row, col, direction):
     sub_grid = [grid[row][col:col + 2], grid[row + 1][col:col + 2]]
     if direction == "esquerda":
         new_sub_grid = [[sub_grid[1][0], sub_grid[0][0]], [sub_grid[1][1], sub_grid[0][1]]]
-    else:
+    else:  # Corrigido para direita conforme a lógica de rotação correta
         new_sub_grid = [[sub_grid[0][1], sub_grid[1][1]], [sub_grid[0][0], sub_grid[1][0]]]
     new_grid = grid[:row] + \
                [grid[row][:col] + new_sub_grid[0] + grid[row][col+2:]] + \
                [grid[row+1][:col] + new_sub_grid[1] + grid[row+1][col+2:]] + \
                grid[row+2:]
     return new_grid
+
+def is_large_grid(R, C):
+    return R == 4 and C == 5 or R == 5 and (C == 4 or C == 5)
 
 def is_goal_state(grid):
     for row_index, row in enumerate(grid, start=1):
@@ -92,8 +75,6 @@ def dfs(grid, moves_left, current_depth=0, visited=None):
     for row in range(len(grid) - 1):
         for col in range(len(grid[0]) - 1):
             for direction in ["left", "right"]:
-                if manhattan_distance(grid) > moves_left:
-                    return "the treasure is lost!"
                 new_grid = rotate_grid(grid, row, col, direction)
                 result = dfs(new_grid, moves_left - 1, current_depth + 1, visited)
                 if result is not None:
@@ -101,12 +82,13 @@ def dfs(grid, moves_left, current_depth=0, visited=None):
 
     return "the treasure is lost!"
 
-def aztec(grid, moves, rows, columns):
+def aztec(grid, moves):
+    # Pré-processamento: Verifica se a distância de Manhattan mínima excede o número de movimentos disponíveis
     if manhattan_distance(grid) > moves:
         return "the treasure is lost!"
     
     objetivo = [[(i + 1) for _ in range(len(grid[0]))] for i in range(len(grid))]
-    if is_large_grid(rows, columns, grid):
+    if is_large_grid(len(grid), len(grid[0])):
         return dfs(grid, moves)
     else:
         return bfs(grid, objetivo, moves)
@@ -118,7 +100,7 @@ def main():
         rows, columns, moves = map(int, input().split())
         G = [list(map(int, input().split())) for _ in range(rows)]
         
-        min_value = aztec(G, moves, rows, columns)    
+        min_value = aztec(G, moves)    
         print(min_value)
 
 if __name__ == "__main__":
