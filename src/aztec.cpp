@@ -13,13 +13,13 @@ typedef vector<vector<int>> Grid;
 typedef tuple<int, int> GridState;
 
 // Calculate the maximum Manhattan distance in the grid
-int manhattan_distance(const vector<vector<int>>& grid) {
+int manhattan_distance(vector<vector<int>> grid) {
     int total_distance = 0;
     int max_distance = 0;
-    for (int row = 0; row < grid.size(); ++row) {
-        for (int col = 0; col < grid[0].size(); ++col) {
+    for (size_t row = 0; row < grid.size(); ++row) {
+        for (size_t col = 0; col < grid[0].size(); ++col) {
             int current_value_row = (grid[row][col] - 1);
-            total_distance = abs(current_value_row - row);
+            total_distance = abs((int)(current_value_row - row));
             max_distance = max(max_distance, total_distance);
         }
     }
@@ -27,24 +27,26 @@ int manhattan_distance(const vector<vector<int>>& grid) {
 }
 
 // Check if the matrix is "almost sorted"
-bool esta_praticamente_ordenada(const vector<vector<int>>& matriz) {
-    for (int i = 0; i < matriz.size(); ++i) {
+bool esta_praticamente_ordenada(vector<vector<int>> matriz) {
+    for (int i = 0; i < (int) matriz.size(); ++i) {
         int count = 0;
         for (int cell : matriz[i]) {
-            if (cell != i + 1) ++count;
+            if (cell != i + 1) 
+                ++count;
         }
-        if (count > matriz[0].size() / 2) return false;
+        if (count > (int) matriz[0].size() / 2) 
+            return false;
     }
     return true;
 }
 
 // Check if the grid is large
-bool is_large_grid(int R, int C, const vector<vector<int>>& G) {
+bool is_large_grid(int R, int C, vector<vector<int>> G) {
     return (R == 4 || R == 5) && (C == 4 || C == 5) && !esta_praticamente_ordenada(G);
 }
 
 // Rotate a 2x2 sub-grid within the grid
-vector<vector<int>> rotate_grid(const vector<vector<int>>& grid, int row, int col, const string& direction) {
+vector<vector<int>> rotate_grid(const vector<vector<int>> grid, int row, int col, const string& direction) {
     vector<vector<int>> new_grid = grid;
     if (direction == "esquerda") {
         new_grid[row][col] = grid[row+1][col];
@@ -62,8 +64,8 @@ vector<vector<int>> rotate_grid(const vector<vector<int>>& grid, int row, int co
 
 // Check if the grid is in a goal state
 bool is_goal_state(const vector<vector<int>>& grid) {
-    for (int row_index = 0; row_index < grid.size(); ++row_index) {
-        for (int col_index = 0; col_index < grid[row_index].size(); ++col_index) {
+    for (int row_index = 0; row_index < (int) grid.size(); ++row_index) {
+        for (int col_index = 0; col_index < (int) grid[row_index].size(); ++col_index) {
             if (grid[row_index][col_index] != row_index + 1) {
                 return false;
             }
@@ -88,9 +90,9 @@ int bfs(const Grid& grid, const Grid& objetivo, int moves) {
             continue;
         }
 
-        for (int i = 0; i < grid.size() - 1; ++i) {
-            for (int j = 0; j < grid[0].size() - 1; ++j) {
-                for (const string& rotacao : {"esquerda", "direita"}) {
+        for (int i = 0; i < (int)grid.size() - 1; ++i) {
+            for (int j = 0; j < (int)grid[0].size() - 1; ++j) {
+                for (auto& rotacao : {"esquerda", "direita"}) {
                     Grid novoEstado = rotate_grid(estadoAtual, i, j, rotacao);
 
                     if (novoEstado == objetivo) {
@@ -124,9 +126,9 @@ int dfs_helper(const Grid& grid, int moves_left, int current_depth, set<Grid>& v
         return -1; // Indicating the treasure is lost
     }
 
-    for (int row = 0; row < grid.size() - 1; ++row) {
-        for (int col = 0; col < grid[0].size() - 1; ++col) {
-            for (const string& direction : {"left", "right"}) {
+    for (int row = 0; row < (int)grid.size() - 1; ++row) {
+        for (int col = 0; col < (int)grid[0].size() - 1; ++col) {
+            for (auto& direction : {"left", "right"}) {
                 if (manhattan_distance(grid) > moves_left) {
                     continue; // Optimization step, can be removed
                 }

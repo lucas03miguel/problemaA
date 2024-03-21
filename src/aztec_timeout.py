@@ -1,6 +1,21 @@
 from collections import deque
+from threading import Thread
+import time
 
-def manhattan_distance(grid):
+class AztecFunctionThread(Thread):
+    def __init__(self, grid, moves, rows, columns):
+        Thread.__init__(self)
+        self.grid = grid
+        self.moves = moves
+        self.rows = rows
+        self.columns = columns
+        self.result = None
+
+    def run(self):
+        self.result = aztec(self.grid, self.moves, self.rows, self.columns)
+
+
+def distance_row(grid):
     total_distance = 0
     max_distance = 0
     for row in range(len(grid)):
@@ -12,22 +27,44 @@ def manhattan_distance(grid):
 
     return max_distance
 
-def esta_praticamente_ordenada(matriz):
-    contagem = []
-    for i in range(len(matriz)):
-        contagem_fora_de_ordem = 0
-        for j in range(len(matriz[0])):
-            if matriz[i][j] != i + 1:
-                contagem_fora_de_ordem += 1
-        contagem.append(contagem_fora_de_ordem)
+def distance_column(grid):
+    total_distance = 0
+    max_distance = 0
+    
+    fora_lugar = {i: 0 for i in range(1, len(grid) + 1)}
+    for i, row in enumerate(grid, start=1):
+        for j, cell in enumerate(row):
+            #print("cell", cell, i, j)
+            if cell != i:
+                fora_lugar[i] = j
+    #print(fora_lugar)
 
-    media = sum(contagem) / len(contagem)
-    if media > len(matriz[0]) / 2:
+    for row in range(len(grid)):
+        for col in range(len(grid[0])):
+            current_value = (grid[row][col] - 1)
+            total_distance = abs(current_value - fora_lugar[current_value + 1])
+            if total_distance > max_distance:
+                max_distance = total_distance
+    return max_distance
+
+def praticamente_ordenada(matriz):
+    total_fora_de_ordem = 0
+    n_linhas = len(matriz)
+    n_colunas = len(matriz[0])
+
+    for i, linha in enumerate(matriz):
+        for valor in linha:
+            if valor != i + 1:
+                total_fora_de_ordem += 1
+        if total_fora_de_ordem > n_colunas / 2:
+            return False
+
+    if total_fora_de_ordem / n_linhas > n_colunas / 2:
         return False
     return True
 
 def is_large_grid(R, C, G):
-    return (((R == 4 or R == 5) and (C == 4 or C == 5))) and not esta_praticamente_ordenada(G)
+    return ((R in {4, 5}) and (C in {4, 5})) and not praticamente_ordenada(G)
 
 def rotate_grid(grid, row, col, direction):
     sub_grid = [grid[row][col:col + 2], grid[row + 1][col:col + 2]]
@@ -59,11 +96,16 @@ def bfs(grid, objetivo, moves):
         if movimentos >= moves:
             continue
 
+        #print("moves:", movimentos, moves)
         for i in range(len(grid) - 1):
             for j in range(len(grid[0]) - 1):
                 for rotacao in ["esquerda", "direita"]:
+                    #if distance_row(estadoAtual) + movimentos > moves:
+                    #    continue
+
                     novoEstado = rotate_grid(estadoAtual, i, j, rotacao)
                     estadoTupla = tuple(map(tuple, novoEstado))
+                    #print(novoEstado)
 
                     if novoEstado == objetivo:
                         return movimentos + 1
@@ -71,11 +113,18 @@ def bfs(grid, objetivo, moves):
                     if estadoTupla not in visitados:
                         visitados.add(estadoTupla)
                         fronteira.append((novoEstado, movimentos + 1))
+
     return "the treasure is lost!"
 
 def dfs(grid, moves_left, current_depth=0, visited=None):
     if visited is None:
         visited = set()
+
+    if is_goal_state(grid):
+        return current_depth 
+
+    if moves_left == 0:
+        return "the treasure is lost!" 
 
     grid_tuple = tuple(map(tuple, grid)) 
     if grid_tuple in visited:
@@ -83,17 +132,12 @@ def dfs(grid, moves_left, current_depth=0, visited=None):
     
     visited.add(grid_tuple)
 
-    if is_goal_state(grid):
-        return current_depth 
-    
-    if moves_left == 0:
-        return "the treasure is lost!" 
-
     for row in range(len(grid) - 1):
         for col in range(len(grid[0]) - 1):
             for direction in ["left", "right"]:
-                if manhattan_distance(grid) > moves_left:
-                    return "the treasure is lost!"
+                if distance_row(grid) > moves_left or distance_column(grid) > moves_left:
+                    continue
+                
                 new_grid = rotate_grid(grid, row, col, direction)
                 result = dfs(new_grid, moves_left - 1, current_depth + 1, visited)
                 if result is not None:
@@ -102,8 +146,17 @@ def dfs(grid, moves_left, current_depth=0, visited=None):
     return "the treasure is lost!"
 
 def aztec(grid, moves, rows, columns):
-    if manhattan_distance(grid) > moves:
+    count = {i: 0 for i in range(1, rows + 1)}
+    for row in grid:
+        for cell in row:
+            count[cell] += 1
+    if any(value != columns for value in count.values()):
         return "the treasure is lost!"
+    
+    if distance_row(grid) > moves or distance_column(grid) > moves:
+        return "the treasure is lost!"
+    
+    #print(distance_column(grid))
     
     objetivo = [[(i + 1) for _ in range(len(grid[0]))] for i in range(len(grid))]
     if is_large_grid(rows, columns, grid):
@@ -113,13 +166,26 @@ def aztec(grid, moves, rows, columns):
 
 
 def main():
-    T = int(input(""))
+    print("", file=open("tests/matrizes_timeout.txt", "w"))
+    T = int(input())
     for _ in range(T):
         rows, columns, moves = map(int, input().split())
         G = [list(map(int, input().split())) for _ in range(rows)]
         
-        min_value = aztec(G, moves, rows, columns)    
-        print(min_value)
+        aztec_thread = AztecFunctionThread(G, moves, rows, columns)
+        aztec_thread.start()
+        aztec_thread.join(timeout=1)  # Espera por 1 segundo
+
+        if aztec_thread.is_alive():
+            print("---------TIMEOUT---------\n")
+            print(rows, columns, moves, file=open("tests/matrizes_timeout.txt", "a"))
+            for row in G:
+                print(" ".join(map(str, row)), file=open("tests/matrizes_timeout.txt", "a"))
+            print("", file=open("tests/matrizes_timeout.txt", "a"))
+            print("-------------------------")
+            aztec_thread.join()
+        result = aztec(G, moves, rows, columns)
+        print(result)
 
 if __name__ == "__main__":
     main()
